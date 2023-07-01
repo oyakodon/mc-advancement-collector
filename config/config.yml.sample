@@ -1,0 +1,14 @@
+advancementPath: /mcroot/world/advancements/ # dockerのマウント先と合わせる
+language: ja_jp # lang/(<ココ>).json
+cache: 60 # 秒, 実績情報のキャッシュ時間
+assets:
+  background:
+    task:
+      incomplete: https://static.wikia.nocookie.net/minecraft_gamepedia/images/d/d9/Advancement-plain-raw.png/revision/latest?cb=20230318042538
+      completed: https://static.wikia.nocookie.net/minecraft_gamepedia/images/f/f2/Advancement-plain-worn.png/revision/latest?cb=20200329050432
+    goal:
+      incomplete: https://static.wikia.nocookie.net/minecraft_gamepedia/images/4/41/Advancement-oval-raw.png/revision/latest?cb=20200329050501
+      completed: https://static.wikia.nocookie.net/minecraft_gamepedia/images/4/4c/Advancement-oval-worn.png/revision/latest?cb=20200329050426
+    challenge:
+      incomplete: https://static.wikia.nocookie.net/minecraft_gamepedia/images/9/96/Advancement-fancy-raw.png/revision/latest?cb=20200329050444
+      completed: https://static.wikia.nocookie.net/minecraft_gamepedia/images/5/5f/Advancement-fancy-worn.png/revision/latest?cb=20200329050401

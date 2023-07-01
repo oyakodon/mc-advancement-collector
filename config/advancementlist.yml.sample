@@ -1,0 +1,12 @@
+advancements:
+  minecraft:story/root:
+    calculate: allof # criteria全て達成が条件なら allof, 一つで良ければ oneof
+    criteria:
+      - crafting_table
+    hidden: false # 隠し実績か
+    # icon:
+    #   invsprite: true   # InvSprite形式かどうか
+    #   pos: <アイコン番号>
+    #   url: <アイコンURL>
+    languageKey: advancements.story.root # lang/*.json のキー
+    type: task # task / goal / challenge
