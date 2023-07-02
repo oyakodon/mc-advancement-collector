@@ -235,15 +235,21 @@ func (c collector) convert(key string, original model.MinecraftAdvancement) (*re
 	}
 	ref := c.ref[key]
 
-	// criteriaの達成日時をRFC 3339形式に変換
-	criteria := make(map[string]string)
-	for k, v := range original.Criteria {
-		t, err := time.Parse(MinecraftAdvancementTimeLayout, v)
+	// criteriaの達成日時をパース
+	criteria := make(map[string]*time.Time)
+	for _, k := range ref.Criteria {
+		timestamp, exists := original.Criteria[k]
+		if !exists {
+			criteria[k] = nil
+			continue
+		}
+
+		t, err := time.Parse(MinecraftAdvancementTimeLayout, timestamp)
 		if err != nil {
 			return nil, ErrAdvancementConvert
 		}
 
-		criteria[k] = t.Format(time.RFC3339)
+		criteria[k] = &t
 	}
 
 	// 進捗集計
