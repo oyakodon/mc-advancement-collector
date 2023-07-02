@@ -19,7 +19,7 @@ type PlayerAdvancement struct {
 	Type     model.AdvancementType     `json:"type"`
 	Hidden   bool                      `json:"hidden"`
 	Done     bool                      `json:"done"`
-	Criteria map[string]string         `json:"criteria"`
+	Criteria map[string]*time.Time     `json:"criteria"`
 	Progress model.AdvancementProgress `json:"progress"`
 }
 
