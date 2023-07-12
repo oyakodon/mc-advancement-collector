@@ -280,6 +280,7 @@ func (c collector) convert(key string, original *model.MinecraftAdvancement) (*m
 	}
 
 	return &model.PlayerAdvancement{
+		Key:    key,
 		Parent: ref.Parent,
 		Display: model.PlayerAdvancementDisplay{
 			Title:       c.lang[ref.LanguageKey+lang.LANG_SUFFIX_TITLE],
@@ -392,8 +393,13 @@ func (c collector) Filter(condition model.AdvancementFilterCondition, summary *m
 }
 
 func (c collector) Response(summary *model.PlayerAdvancementSummary) *responses.PlayerAdvancementResponse {
+	advancements := make([]*model.PlayerAdvancement, len(summary.Advancements))
+	for _, v := range summary.Advancements {
+		advancements = append(advancements, v)
+	}
+
 	return &responses.PlayerAdvancementResponse{
-		Advancements: summary.Advancements,
+		Advancements: advancements,
 		Progress:     summary.Progress,
 		Updated:      summary.Updated,
 		Cached:       summary.Cached,

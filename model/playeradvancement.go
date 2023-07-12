@@ -9,6 +9,7 @@ type PlayerAdvancementSummary struct {
 	Cached       time.Time
 }
 type PlayerAdvancement struct {
+	Key      string                   `json:"key"`
 	Parent   string                   `json:"parent"`
 	Display  PlayerAdvancementDisplay `json:"display"`
 	Type     AdvancementType          `json:"type"`
