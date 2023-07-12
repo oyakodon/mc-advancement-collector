@@ -393,7 +393,7 @@ func (c collector) Filter(condition model.AdvancementFilterCondition, summary *m
 }
 
 func (c collector) Response(summary *model.PlayerAdvancementSummary) *responses.PlayerAdvancementResponse {
-	advancements := make([]*model.PlayerAdvancement, len(summary.Advancements))
+	advancements := make([]*model.PlayerAdvancement, 0, len(summary.Advancements))
 	for _, v := range summary.Advancements {
 		advancements = append(advancements, v)
 	}
