@@ -39,8 +39,9 @@ var (
 
 type Collector interface {
 	Player() (*responses.PlayersResponse, error)
-	Load(userId string) (*responses.PlayerAdvancementResponse, error)
-	Filter(condition model.AdvancementFilterCondition, resp *responses.PlayerAdvancementResponse) *responses.PlayerAdvancementResponse
+	Load(string) (*model.PlayerAdvancementSummary, error)
+	Filter(model.AdvancementFilterCondition, *model.PlayerAdvancementSummary) *model.PlayerAdvancementSummary
+	Response(*model.PlayerAdvancementSummary) *responses.PlayerAdvancementResponse
 }
 
 type collector struct {
@@ -52,7 +53,7 @@ type collector struct {
 	playercache config.PlayerCache
 	cacheSecond int
 	cache       map[string]struct {
-		Response responses.PlayerAdvancementResponse
+		Response model.PlayerAdvancementSummary
 		Updated  time.Time
 	}
 }
@@ -131,7 +132,7 @@ func (c collector) Player() (*responses.PlayersResponse, error) {
 	}, nil
 }
 
-func (c collector) Load(userId string) (*responses.PlayerAdvancementResponse, error) {
+func (c collector) Load(userId string) (*model.PlayerAdvancementSummary, error) {
 	// キャッシュが存在 かつ 時間内の場合はキャッシュから返す
 	if cache, exists := c.cache[userId]; exists {
 		if time.Now().Before(cache.Updated.Add(time.Duration(c.cacheSecond) * time.Second)) {
@@ -140,18 +141,20 @@ func (c collector) Load(userId string) (*responses.PlayerAdvancementResponse, er
 	}
 
 	// jsonから進捗をロード
-	filepath := path.Join(c.basePath, userId+".json")
-	mcadvs, err := c.load(filepath)
+	var (
+		filepath = path.Join(c.basePath, userId+".json")
+	)
+	original, updated, err := c.load(filepath)
 	if err != nil {
 		return nil, err
 	}
 
 	// yamlの進捗設定ファイルとjsonの進捗情報を突き合わせ, 変換処理
-	advancements := make(map[string]*responses.PlayerAdvancement)
+	advancements := make(map[string]*model.PlayerAdvancement)
 	for k := range c.ref {
-		adv, exists := mcadvs.Advancements[k]
+		adv, exists := original[k]
 		if !exists {
-			adv = model.MinecraftAdvancement{
+			adv = &model.MinecraftAdvancement{
 				Criteria: map[string]string{},
 				Done:     false,
 			}
@@ -168,16 +171,16 @@ func (c collector) Load(userId string) (*responses.PlayerAdvancementResponse, er
 
 	// 集計結果も含めて全件レスポンス
 	now := time.Now().UTC()
-	resp := responses.PlayerAdvancementResponse{
+	resp := model.PlayerAdvancementSummary{
 		Advancements: advancements,
-		Progress:     c.summarize(advancements),
-		Updated:      mcadvs.UpdatedAt,
+		Progress:     *c.summarize(advancements),
+		Updated:      *updated,
 		Cached:       now,
 	}
 
 	// - キャッシュ更新
 	c.cache[userId] = struct {
-		Response responses.PlayerAdvancementResponse
+		Response model.PlayerAdvancementSummary
 		Updated  time.Time
 	}{
 		Response: resp,
@@ -187,24 +190,24 @@ func (c collector) Load(userId string) (*responses.PlayerAdvancementResponse, er
 	return &resp, nil
 }
 
-func (c collector) load(filepath string) (*model.MinecraftAdvancementSummary, error) {
+func (c collector) load(filepath string) (map[string]*model.MinecraftAdvancement, *time.Time, error) {
 	// JSONファイル存在確認 -> オープン
 	fileinfo, err := os.Stat(filepath)
 	if err != nil {
-		return nil, ErrPlayerNotFound
+		return nil, nil, ErrPlayerNotFound
 	}
 
 	b, err := os.ReadFile(filepath)
 	if err != nil {
 		logger.Warn(err)
-		return nil, ErrOpenAdvancementJSON
+		return nil, nil, ErrOpenAdvancementJSON
 	}
 
 	// 一旦interface{}で読み込み
 	var v map[string]interface{}
 	if err := json.Unmarshal(b, &v); err != nil {
 		logger.Warn(err)
-		return nil, ErrParseAdvancement
+		return nil, nil, ErrParseAdvancement
 	}
 	// - DataVersionを除去
 	delete(v, "DataVersion")
@@ -213,22 +216,20 @@ func (c collector) load(filepath string) (*model.MinecraftAdvancementSummary, er
 	b, err = json.Marshal(v)
 	if err != nil {
 		logger.Warn(err)
-		return nil, ErrParseAdvancement
+		return nil, nil, ErrParseAdvancement
 	}
 
-	advancements := make(map[string]model.MinecraftAdvancement)
+	advancements := make(map[string]*model.MinecraftAdvancement)
 	if err := json.Unmarshal(b, &advancements); err != nil {
 		logger.Warn(err)
-		return nil, ErrParseAdvancement
+		return nil, nil, ErrParseAdvancement
 	}
 
-	return &model.MinecraftAdvancementSummary{
-		Advancements: advancements,
-		UpdatedAt:    fileinfo.ModTime().UTC(),
-	}, nil
+	updated := fileinfo.ModTime().UTC()
+	return advancements, &updated, nil
 }
 
-func (c collector) convert(key string, original model.MinecraftAdvancement) (*responses.PlayerAdvancement, error) {
+func (c collector) convert(key string, original *model.MinecraftAdvancement) (*model.PlayerAdvancement, error) {
 	// 設定ファイルから各種実績の属性値を読み込み
 	if _, exists := c.ref[key]; !exists {
 		return nil, ErrAdvancementKeyNotFound
@@ -278,12 +279,12 @@ func (c collector) convert(key string, original model.MinecraftAdvancement) (*re
 		posx = (ref.Icon.Pos - posy - 1) * 32
 	}
 
-	return &responses.PlayerAdvancement{
+	return &model.PlayerAdvancement{
 		Parent: ref.Parent,
-		Display: responses.PlayerAdvancementDisplay{
+		Display: model.PlayerAdvancementDisplay{
 			Title:       c.lang[ref.LanguageKey+lang.LANG_SUFFIX_TITLE],
 			Description: c.lang[ref.LanguageKey+lang.LANG_SUFFIX_DESCRIPTION],
-			Icon: responses.PlayerAdvancementDisplayIcon{
+			Icon: model.PlayerAdvancementDisplayIcon{
 				Url:       ref.Icon.Url,
 				InvSprite: ref.Icon.InvSprite,
 				PosX:      posx,
@@ -302,7 +303,7 @@ func (c collector) convert(key string, original model.MinecraftAdvancement) (*re
 	}, nil
 }
 
-func (c collector) summarize(advancements map[string]*responses.PlayerAdvancement) model.AdvancementProgress {
+func (c collector) summarize(advancements map[string]*model.PlayerAdvancement) *model.AdvancementProgress {
 	total := len(advancements)
 
 	done := 0
@@ -320,78 +321,82 @@ func (c collector) summarize(advancements map[string]*responses.PlayerAdvancemen
 		}
 	}
 
-	return model.AdvancementProgress{
+	return &model.AdvancementProgress{
 		Total:      len(advancements),
 		Done:       done,
 		Percentage: math.Floor((progress/float64(total))*1000) / 1000,
 	}
 }
 
-func (c collector) Filter(condition model.AdvancementFilterCondition, resp *responses.PlayerAdvancementResponse) *responses.PlayerAdvancementResponse {
-	// deep copy
-	advancements := make(map[string]*responses.PlayerAdvancement)
-	for k, v := range resp.Advancements {
-		advancements[k] = v
-	}
+func (c collector) Filter(condition model.AdvancementFilterCondition, summary *model.PlayerAdvancementSummary) *model.PlayerAdvancementSummary {
+	advancements := make(map[string]*model.PlayerAdvancement)
 
 	switch condition {
 	case model.ConditionDone:
-		for k, v := range advancements {
+		for k, v := range summary.Advancements {
 			if v.Done {
-				continue
+				advancements[k] = v
 			}
-
-			delete(advancements, k)
 		}
 
 	case model.ConditionProgress:
-		checkParent := func(v *responses.PlayerAdvancement) (*responses.PlayerAdvancement, bool) {
+		checkParent := func(v *model.PlayerAdvancement) (*model.PlayerAdvancement, bool) {
 			if v == nil {
 				return nil, false
 			}
 
-			parent, exists := resp.Advancements[v.Parent]
+			parent, exists := summary.Advancements[v.Parent]
 			return parent, exists && parent.Done
 		}
 
-		for k, v := range advancements {
+		for k, v := range summary.Advancements {
 			// 達成済みの場合は表示
 			if v.Done {
+				advancements[k] = v
 				continue
 			}
 
 			// 隠し進捗で未達成の場合は、非表示
 			if v.Hidden {
-				delete(advancements, k)
 				continue
 			}
 
 			// 親進捗が存在し、達成済みの場合は表示
 			parent, done := checkParent(v)
 			if done {
+				advancements[k] = v
 				continue
 			}
 
 			// 親進捗の親が存在し、達成済みの場合は表示
 			if _, done := checkParent(parent); done {
-				continue
+				advancements[k] = v
 			}
-
-			delete(advancements, k)
 		}
 
 	// all 及び 該当しない場合はすべて返す
 	case model.ConditionAll:
-		break
+		fallthrough
 	default:
-		logger.Warn("invalid condition; return original response.")
+		for k, v := range summary.Advancements {
+			advancements[k] = v
+		}
 	}
 
-	return &responses.PlayerAdvancementResponse{
+	return &model.PlayerAdvancementSummary{
 		Advancements: advancements,
-		Progress:     resp.Progress,
-		Updated:      resp.Updated,
-		Cached:       resp.Cached,
+		Progress:     summary.Progress,
+		Updated:      summary.Updated,
+		Cached:       summary.Cached,
+	}
+}
+
+func (c collector) Response(summary *model.PlayerAdvancementSummary) *responses.PlayerAdvancementResponse {
+	return &responses.PlayerAdvancementResponse{
+		Advancements: summary.Advancements,
+		Progress:     summary.Progress,
+		Updated:      summary.Updated,
+		Cached:       summary.Cached,
 	}
 }
 
@@ -430,7 +435,7 @@ func NewCollector(config *config.AppConfig, list *config.AdvancementList, lang *
 		playercache: *playercache,
 		cacheSecond: config.Cache,
 		cache: make(map[string]struct {
-			Response responses.PlayerAdvancementResponse
+			Response model.PlayerAdvancementSummary
 			Updated  time.Time
 		}),
 	}
