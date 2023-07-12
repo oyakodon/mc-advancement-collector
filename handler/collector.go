@@ -116,7 +116,7 @@ func main() {
 		}
 
 		// プレイヤーの進捗情報を取得
-		resp, err := collector.Load(p.PlayerId)
+		advancements, err := collector.Load(p.PlayerId)
 		if err != nil {
 			code := http.StatusInternalServerError
 
@@ -132,6 +132,8 @@ func main() {
 			return
 		}
 
+		resp := collector.Response(collector.Filter(condition, advancements))
+
 		// pretty print & no escape でJSONを返却
 		c.Status(http.StatusOK)
 
@@ -143,7 +145,7 @@ func main() {
 		enc := json.NewEncoder(c.Writer)
 		enc.SetEscapeHTML(false)
 		enc.SetIndent("", "    ")
-		if err := enc.Encode(collector.Filter(condition, resp)); err != nil {
+		if err := enc.Encode(resp); err != nil {
 			panic(err)
 		}
 	})
