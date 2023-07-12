@@ -150,24 +150,37 @@ func (c collector) Load(userId string) (*model.PlayerAdvancementSummary, error) 
 	}
 
 	// yamlの進捗設定ファイルとjsonの進捗情報を突き合わせ, 変換処理
-	advancements := make(map[string]*model.PlayerAdvancement)
+	var (
+		mu           sync.Mutex
+		wg           sync.WaitGroup
+		advancements = make(map[string]*model.PlayerAdvancement)
+	)
 	for k := range c.ref {
-		adv, exists := original[k]
-		if !exists {
-			adv = &model.MinecraftAdvancement{
-				Criteria: map[string]string{},
-				Done:     false,
+		wg.Add(1)
+
+		go func(k string) {
+			defer wg.Done()
+			adv, exists := original[k]
+			if !exists {
+				adv = &model.MinecraftAdvancement{
+					Criteria: map[string]string{},
+					Done:     false,
+				}
 			}
-		}
 
-		converted, err := c.convert(k, adv)
-		if err != nil {
-			logger.Warn(err)
-			continue
-		}
+			converted, err := c.convert(k, adv)
+			if err != nil {
+				logger.Warn(err)
+				return
+			}
 
-		advancements[k] = converted
+			mu.Lock()
+			defer mu.Unlock()
+
+			advancements[k] = converted
+		}(k)
 	}
+	wg.Wait()
 
 	// 集計結果も含めて全件レスポンス
 	now := time.Now().UTC()
