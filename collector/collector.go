@@ -26,6 +26,8 @@ const (
 	PROFILE_API_PATH = "https://sessionserver.mojang.com/session/minecraft/profile"
 
 	MinecraftAdvancementTimeLayout = "2006-01-02 15:04:05 -0700"
+
+	SpriteSize = 32
 )
 
 var (
@@ -288,8 +290,9 @@ func (c collector) convert(key string, original *model.MinecraftAdvancement) (*m
 	// アイコン表示
 	var posx, posy int
 	if ref.Icon.InvSprite {
-		posy = (ref.Icon.Pos / 32) * 32
-		posx = (ref.Icon.Pos - posy - 1) * 32
+		p := ref.Icon.Pos - 1
+		posx = (p % SpriteSize) * SpriteSize
+		posy = (p / SpriteSize) * SpriteSize
 	}
 
 	return &model.PlayerAdvancement{
