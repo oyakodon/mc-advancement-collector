@@ -28,6 +28,6 @@ type PlayerAdvancementDisplay struct {
 type PlayerAdvancementDisplayIcon struct {
 	Url       string `json:"url"`
 	InvSprite bool   `json:"invsprite"`
-	PosX      int    `json:"posx,omitempty"`
-	PosY      int    `json:"posy,omitempty"`
+	PosX      *int   `json:"posx,omitempty"`
+	PosY      *int   `json:"posy,omitempty"`
 }

@@ -288,11 +288,13 @@ func (c collector) convert(key string, original *model.MinecraftAdvancement) (*m
 	}
 
 	// アイコン表示
-	var posx, posy int
+	var posx, posy *int
 	if ref.Icon.InvSprite {
 		p := ref.Icon.Pos - 1
-		posx = (p % SpriteSize) * SpriteSize
-		posy = (p / SpriteSize) * SpriteSize
+		x := (p % SpriteSize) * SpriteSize
+		y := (p / SpriteSize) * SpriteSize
+		posx = &x
+		posy = &y
 	}
 
 	return &model.PlayerAdvancement{
