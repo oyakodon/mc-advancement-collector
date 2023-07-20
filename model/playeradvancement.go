@@ -21,7 +21,7 @@ type PlayerAdvancement struct {
 
 type PlayerAdvancementDisplay struct {
 	Title       string                       `json:"title"`
-	Description string                       `json:"desciption"`
+	Description string                       `json:"description"`
 	Icon        PlayerAdvancementDisplayIcon `json:"icon"`
 }
 
