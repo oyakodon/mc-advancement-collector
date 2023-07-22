@@ -270,10 +270,10 @@ func (c collector) convert(key string, original *model.MinecraftAdvancement) (*m
 
 	// 進捗集計
 	total := 0
-	switch ref.Calculate {
-	case model.CalculateOneOf:
+	switch ref.Metrics {
+	case model.MetricsOneOf:
 		total = 1
-	case model.CalculateAllOf:
+	case model.MetricsAllOf:
 		total = len(ref.Criteria)
 	}
 
@@ -313,6 +313,7 @@ func (c collector) convert(key string, original *model.MinecraftAdvancement) (*m
 		Type:     ref.Type,
 		Hidden:   ref.Hidden,
 		Done:     original.Done,
+		Metrics:  ref.Metrics,
 		Criteria: criteria,
 		Progress: model.AdvancementProgress{
 			Total:      total,

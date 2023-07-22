@@ -8,11 +8,11 @@ const (
 	Challenge AdvancementType = "challenge"
 )
 
-type CalculateType string
+type MetricsType string
 
 const (
-	CalculateOneOf CalculateType = "oneof"
-	CalculateAllOf CalculateType = "allof"
+	MetricsOneOf MetricsType = "oneof"
+	MetricsAllOf MetricsType = "allof"
 )
 
 type AdvancementFilterCondition string

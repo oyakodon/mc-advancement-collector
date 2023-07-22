@@ -11,7 +11,7 @@ type AdvancementRecord struct {
 	Criteria    []string              `yaml:"criteria"`
 	Parent      string                `yaml:"parent"`
 	LanguageKey string                `yaml:"languageKey"`
-	Calculate   model.CalculateType   `yaml:"calculate"`
+	Metrics     model.MetricsType     `yaml:"metrics"`
 	Hidden      bool                  `yaml:"hidden"`
 	Type        model.AdvancementType `yaml:"type"`
 	Icon        AdvancementRecordIcon `yaml:"icon"`

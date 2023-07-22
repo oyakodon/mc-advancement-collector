@@ -15,6 +15,7 @@ type PlayerAdvancement struct {
 	Type     AdvancementType          `json:"type"`
 	Hidden   bool                     `json:"hidden"`
 	Done     bool                     `json:"done"`
+	Metrics  MetricsType              `json:"metrics"`
 	Criteria map[string]*time.Time    `json:"criteria"`
 	Progress AdvancementProgress      `json:"progress"`
 }
