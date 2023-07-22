@@ -11,7 +11,7 @@ const (
 type MetricsType string
 
 const (
-	MetricsOneOf MetricsType = "oneof"
+	MetricsAnyOf MetricsType = "anyof"
 	MetricsAllOf MetricsType = "allof"
 )
 

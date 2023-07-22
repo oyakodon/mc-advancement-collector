@@ -271,7 +271,7 @@ func (c collector) convert(key string, original *model.MinecraftAdvancement) (*m
 	// 進捗集計
 	total := 0
 	switch ref.Metrics {
-	case model.MetricsOneOf:
+	case model.MetricsAnyOf:
 		total = 1
 	case model.MetricsAllOf:
 		total = len(ref.Criteria)

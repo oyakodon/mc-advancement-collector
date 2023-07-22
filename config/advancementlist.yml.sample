@@ -1,6 +1,6 @@
 advancements:
   minecraft:story/root:
-    metrics: allof # criteria全て達成が条件なら allof, 一つで良ければ oneof
+    metrics: allof # criteria全て達成が条件なら allof, 一つで良ければ anyof
     criteria:
       - crafting_table
     hidden: false # 隠し実績か
